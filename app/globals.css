@@ -1,26 +1,53 @@
 @import "tailwindcss";
 
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
-}
+@theme {
+  --color-bg: #0a2e28;
+  --color-bg-elev: #0d4f44;
+  --color-bg-card: #115e50;
+  --color-border: #1a6b5b;
 
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
+  --color-primary: #10b981;
+  --color-primary-hover: #34d399;
+  --color-accent: #34d399;
+  --color-mint: #7ee2bb;
+  --color-mint-soft: #a7f3d0;
+
+  --color-fg: #e6f0ee;
+  --color-fg-muted: #a7f3d0;
+  --color-fg-dim: #7ee2bb;
+
+  --color-prio-critica: #ef4444;
+  --color-prio-alta: #f59e0b;
+  --color-prio-media: #facc15;
+  --color-prio-baixa: #38bdf8;
+
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+html,
+body {
+  background: var(--color-bg);
+  color: var(--color-fg);
+  font-family: var(--font-sans), system-ui, sans-serif;
+  -webkit-tap-highlight-color: transparent;
+  overscroll-behavior-y: contain;
 }
 
-body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+* {
+  -webkit-font-smoothing: antialiased;
+}
+
+button {
+  touch-action: manipulation;
+}
+
+@keyframes pulse-ring {
+  0% { box-shadow: 0 0 0 0 rgba(52, 211, 153, 0.6); }
+  70% { box-shadow: 0 0 0 18px rgba(52, 211, 153, 0); }
+  100% { box-shadow: 0 0 0 0 rgba(52, 211, 153, 0); }
+}
+
+.pulse-ring {
+  animation: pulse-ring 1.6s ease-out infinite;
 }
