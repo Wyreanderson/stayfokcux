@@ -1,6 +1,10 @@
 import { createSupabaseServer, createSupabaseService } from "@/lib/supabase/server";
 import { env } from "@/lib/env";
-import type { Categoria, Tarefa } from "@/lib/supabase/types";
+import type {
+  AtualizacaoTarefa,
+  Categoria,
+  Tarefa,
+} from "@/lib/supabase/types";
 import { GRUPOS, type Grupo } from "./grupos";
 
 const TAREFA_SELECT =
@@ -61,6 +65,20 @@ export async function getHistorico(opts?: { incluirAbertas?: boolean }) {
   if (!opts?.incluirAbertas) query = query.eq("status", "concluida");
   const { data } = await query;
   return (data ?? []) as Tarefa[];
+}
+
+export async function getAtualizacoes(
+  tarefaId: string,
+  limit = 50,
+): Promise<AtualizacaoTarefa[]> {
+  const sb = await createSupabaseServer();
+  const { data } = await sb
+    .from("atualizacoes_tarefa")
+    .select("*")
+    .eq("tarefa_id", tarefaId)
+    .order("created_at", { ascending: false })
+    .limit(limit);
+  return (data ?? []) as AtualizacaoTarefa[];
 }
 
 export async function getPadroesDoUsuario(limit = 12): Promise<string[]> {

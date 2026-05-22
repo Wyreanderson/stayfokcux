@@ -1,8 +1,15 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { ChevronLeft } from "lucide-react";
-import { getCategorias, getTarefa } from "@/lib/tarefas/queries";
+import {
+  getAtualizacoes,
+  getCategorias,
+  getTarefa,
+} from "@/lib/tarefas/queries";
 import { DetalhesForm } from "@/components/tarefa/DetalhesForm";
+import { ResumoCard } from "@/components/tarefa/ResumoCard";
+import { AdicionarAtualizacao } from "@/components/tarefa/AdicionarAtualizacao";
+import { Timeline } from "@/components/tarefa/Timeline";
 
 export default async function TarefaPage({
   params,
@@ -10,9 +17,10 @@ export default async function TarefaPage({
   params: Promise<{ id: string }>;
 }) {
   const { id } = await params;
-  const [tarefa, categorias] = await Promise.all([
+  const [tarefa, categorias, atualizacoes] = await Promise.all([
     getTarefa(id),
     getCategorias(),
+    getAtualizacoes(id),
   ]);
   if (!tarefa) notFound();
 
@@ -32,6 +40,11 @@ export default async function TarefaPage({
           {tarefa.descricao_resumida || tarefa.descricao}
         </h1>
       </div>
+
+      <ResumoCard tarefa={tarefa} ultimaAtualizacao={atualizacoes[0] ?? null} />
+      <AdicionarAtualizacao tarefaId={tarefa.id} />
+      <Timeline items={atualizacoes} />
+
       <DetalhesForm tarefa={tarefa} categorias={categorias} />
     </div>
   );

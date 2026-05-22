@@ -32,8 +32,22 @@ export type Tarefa = {
   notas: string | null;
   fonte: Fonte;
   audio_url: string | null;
+  resumo_atual: string | null;
   created_at: string;
   updated_at: string;
+};
+
+export type AtualizacaoTarefa = {
+  id: string;
+  tarefa_id: string;
+  fonte: Fonte;
+  conteudo_original: string;
+  resumo_acao: string;
+  audio_url: string | null;
+  status_anterior: Status | null;
+  status_novo: Status | null;
+  razao_mudanca: string | null;
+  created_at: string;
 };
 
 export type HistoricoItem = {

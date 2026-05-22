@@ -2,10 +2,13 @@ import Anthropic from "@anthropic-ai/sdk";
 import { env } from "@/lib/env";
 import {
   CATEGORIAS,
+  STATUS_VALUES,
   type Classificacao,
   classificacaoSchema,
   loteSchema,
   type Lote,
+  atualizacaoSchema,
+  type AtualizacaoIA,
 } from "./schemas";
 
 const MODEL = "claude-sonnet-4-5";
@@ -142,4 +145,100 @@ Retorne todas as tarefas via tool registrar_lote.`;
     throw new Error("Claude não retornou tool_use no Modo Caos");
   }
   return loteSchema.parse(toolUse.input);
+}
+
+const SYSTEM_PROMPT_ATUALIZACAO = `Você ajuda um almoxarife/mecânico a manter o estado de uma tarefa em andamento. A cada relato dele (áudio transcrito ou texto), você:
+1. Resume em UMA frase o que aconteceu nessa atualização (resumo_acao).
+2. Atualiza um resumo cumulativo curto do "onde parei" combinando o estado anterior + esse relato (resumo_atual_novo, 2 a 4 frases).
+3. Decide se o status da tarefa precisa mudar:
+   - agora: precisa ser feita já
+   - em_breve: importante, próximas horas
+   - pode_esperar: pode esperar dias
+   - em_pausa: aguardando algo externo (cliente, fornecedor, peça)
+   - concluida: terminada
+   Se o status não precisa mudar, retorne novo_status = null.
+4. Se mudou status, explique em razao_mudanca (1 frase). Senão, razao_mudanca = null.
+
+Seja conciso, direto, em português brasileiro. Não invente fatos. Use o fuso de São Paulo.`;
+
+const TOOL_ATUALIZACAO = {
+  name: "registrar_atualizacao",
+  description: "Registra uma atualização de progresso em uma tarefa existente",
+  input_schema: {
+    type: "object" as const,
+    properties: {
+      resumo_acao: { type: "string" },
+      resumo_atual_novo: { type: "string" },
+      novo_status: {
+        type: ["string", "null"],
+        enum: [...STATUS_VALUES, null],
+      },
+      razao_mudanca: { type: ["string", "null"] },
+    },
+    required: [
+      "resumo_acao",
+      "resumo_atual_novo",
+      "novo_status",
+      "razao_mudanca",
+    ],
+  },
+};
+
+export async function processarAtualizacao(input: {
+  tarefa: {
+    descricao: string;
+    descricao_resumida: string | null;
+    status: string;
+    prioridade: string;
+    motivacao: string | null;
+    resumo_atual: string | null;
+  };
+  atualizacoesAnteriores: { resumo_acao: string; status_novo: string | null }[];
+  novoRelato: string;
+  agora: string;
+}): Promise<AtualizacaoIA> {
+  const client = getClient();
+
+  const historicoTxt = input.atualizacoesAnteriores.length
+    ? input.atualizacoesAnteriores
+        .map(
+          (a, i) =>
+            `${i + 1}. ${a.resumo_acao}${
+              a.status_novo ? ` (→ ${a.status_novo})` : ""
+            }`,
+        )
+        .join("\n")
+    : "(nenhuma)";
+
+  const userPrompt = `Tarefa atual:
+- Descrição: """${input.tarefa.descricao}"""
+- Resumida: ${input.tarefa.descricao_resumida ?? "—"}
+- Status atual: ${input.tarefa.status}
+- Prioridade: ${input.tarefa.prioridade}
+- Motivação inicial da IA: ${input.tarefa.motivacao ?? "—"}
+- Resumo "onde parei" atual: ${input.tarefa.resumo_atual ?? "(ainda não há)"}
+
+Atualizações anteriores (mais antigas → mais recentes):
+${historicoTxt}
+
+Novo relato do usuário: """${input.novoRelato}"""
+
+Data/hora atual: ${input.agora}
+
+Processe a atualização chamando a tool registrar_atualizacao.`;
+
+  const res = await client.messages.create({
+    model: MODEL,
+    max_tokens: 1024,
+    system: SYSTEM_PROMPT_ATUALIZACAO,
+    tools: [TOOL_ATUALIZACAO],
+    tool_choice: { type: "tool", name: "registrar_atualizacao" },
+    messages: [{ role: "user", content: userPrompt }],
+  });
+
+  const toolUse = res.content.find((b) => b.type === "tool_use");
+  if (!toolUse || toolUse.type !== "tool_use") {
+    throw new Error("Claude não retornou tool_use na atualização");
+  }
+  return atualizacaoSchema.parse(toolUse.input);
 }

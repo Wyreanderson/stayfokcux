@@ -35,3 +35,20 @@ export const loteSchema = z.object({
 });
 
 export type Lote = z.infer<typeof loteSchema>;
+
+export const STATUS_VALUES = [
+  "agora",
+  "em_breve",
+  "pode_esperar",
+  "em_pausa",
+  "concluida",
+] as const;
+
+export const atualizacaoSchema = z.object({
+  resumo_acao: z.string().min(1).max(280),
+  resumo_atual_novo: z.string().min(1).max(1500),
+  novo_status: z.enum(STATUS_VALUES).nullable(),
+  razao_mudanca: z.string().nullable(),
+});
+
+export type AtualizacaoIA = z.infer<typeof atualizacaoSchema>;
