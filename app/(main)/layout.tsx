@@ -12,7 +12,7 @@ export default function MainLayout({ children }: { children: React.ReactNode }) 
             <Logo />
           </Link>
           <span className="text-xs text-[var(--color-fg-dim)] uppercase tracking-wide">
-            Almoxarife
+            Wyre
           </span>
         </div>
       </header>

@@ -63,7 +63,7 @@ export default async function DashboardPage({
     <div className="flex flex-col gap-4">
       <FilaRealtime />
       <div>
-        <p className="text-xs text-[var(--color-fg-dim)]">Olá, Almoxarife</p>
+        <p className="text-xs text-[var(--color-fg-dim)]">Olá, Wyre</p>
         <h1 className="text-xl font-bold">Aqui está o seu fluxo de hoje.</h1>
       </div>
       <Filtros />

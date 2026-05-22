@@ -9,8 +9,8 @@ export function Logo({ size = 28 }: { size?: number }) {
         strokeWidth={2.5}
       />
       <span className="font-bold tracking-tight">
-        <span className="text-[var(--color-fg)]">PIT</span>
-        <span className="text-[var(--color-primary)] ml-1">FLOW</span>
+        <span className="text-[var(--color-fg)]">stay</span>
+        <span className="text-[var(--color-primary)]">fokcux</span>
       </span>
     </div>
   );

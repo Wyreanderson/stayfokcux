@@ -14,15 +14,15 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "PIT FLOW — Seu fluxo. Sua oficina. Seu controle.",
+  title: "stayfokcux — Seu fluxo. Sua oficina. Seu controle.",
   description:
     "Organização inteligente de tarefas para almoxarifado e oficina. Capture por voz ou texto, deixe a IA priorizar.",
   manifest: "/manifest.webmanifest",
-  applicationName: "PIT FLOW",
+  applicationName: "stayfokcux",
   appleWebApp: {
     capable: true,
     statusBarStyle: "black-translucent",
-    title: "PIT FLOW",
+    title: "stayfokcux",
   },
 };
 
