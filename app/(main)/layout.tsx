@@ -6,7 +6,7 @@ import { Logo } from "@/components/shared/Logo";
 export default function MainLayout({ children }: { children: React.ReactNode }) {
   return (
     <div className="flex min-h-screen flex-col bg-[var(--color-bg)]">
-      <header className="sticky top-0 z-20 bg-[var(--color-bg)]/95 backdrop-blur border-b border-[var(--color-border)]/40">
+      <header className="sticky top-0 z-20 bg-[var(--color-bg)]/95 backdrop-blur border-b border-[var(--color-border)]/40 pt-[env(safe-area-inset-top)]">
         <div className="mx-auto max-w-md px-4 py-3 flex items-center justify-between">
           <Link href="/">
             <Logo />
