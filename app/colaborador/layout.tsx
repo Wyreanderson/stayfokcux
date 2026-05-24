@@ -26,19 +26,24 @@ export default async function ColaboradorLayout({
           <Link href="/colaborador">
             <Logo />
           </Link>
-          <form action={logout}>
-            <button
-              type="submit"
-              className="text-xs text-[var(--color-fg-dim)] inline-flex items-center gap-1"
-              aria-label="Sair"
-            >
-              <LogOut size={14} /> Sair
-            </button>
-          </form>
+          <div className="flex items-center gap-3 min-w-0">
+            <span className="text-xs text-[var(--color-fg-dim)] uppercase tracking-wide truncate">
+              {user.nome}
+            </span>
+            <form action={logout}>
+              <button
+                type="submit"
+                className="text-[var(--color-fg-dim)] inline-flex items-center"
+                aria-label="Sair"
+              >
+                <LogOut size={14} />
+              </button>
+            </form>
+          </div>
         </div>
-        <div className="mx-auto max-w-md px-4 pb-2 text-xs text-[var(--color-fg-dim)]">
+        <div className="mx-auto max-w-md px-4 pb-2 text-[11px] text-[var(--color-fg-dim)]">
           Enviando para{" "}
-          <span className="text-[var(--color-fg)] font-medium">
+          <span className="text-[var(--color-primary)] font-medium">
             {patrao?.nome ?? "—"}
           </span>
         </div>

@@ -17,6 +17,9 @@ export function proxy(req: NextRequest) {
   const session = cookie ? verifyCookieValue(cookie.value) : null;
 
   if (!session) {
+    console.log(
+      `[proxy] redirect /login (${req.method} ${pathname}) — cookie=${cookie ? "presente_mas_invalido" : "ausente"}`,
+    );
     const loginUrl = new URL("/login", req.url);
     if (pathname !== "/") loginUrl.searchParams.set("from", pathname);
     return NextResponse.redirect(loginUrl);
@@ -25,9 +28,10 @@ export function proxy(req: NextRequest) {
   const { role } = session;
   const rotaColaborador =
     pathname === "/colaborador" || pathname.startsWith("/colaborador/");
+  const rotaApi = pathname.startsWith("/api/");
 
   if (role === "colaborador") {
-    if (!rotaColaborador) {
+    if (!rotaColaborador && !rotaApi) {
       return NextResponse.redirect(new URL("/colaborador", req.url));
     }
   } else if (role === "patrao") {

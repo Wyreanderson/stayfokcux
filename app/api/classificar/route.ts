@@ -36,6 +36,10 @@ export async function POST(req: Request) {
     usuarioId = user.id;
   }
 
+  console.log(
+    `[/api/classificar] user=${user.nome} (${user.id.slice(0, 8)}, role=${user.role}) → usuario_id=${usuarioId.slice(0, 8)}, solicitante_id=${solicitanteId?.slice(0, 8) ?? "null"}`,
+  );
+
   const padroes = await getPadroesDoUsuario(usuarioId);
   const classificacao = await classificarTarefa(parse.data.descricao, {
     padroes,
