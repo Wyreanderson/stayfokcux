@@ -12,7 +12,7 @@ export function GrupoFila({
   if (tarefas.length === 0) return null;
   const meta = GRUPO_META[grupo];
   return (
-    <section className="flex flex-col gap-2">
+    <section id={`grupo-${grupo}`} className="flex flex-col gap-2 scroll-mt-24">
       <header className="flex items-baseline justify-between px-1">
         <div className="flex items-center gap-2">
           <span

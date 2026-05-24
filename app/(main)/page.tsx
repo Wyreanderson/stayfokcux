@@ -6,6 +6,7 @@ import { GrupoFila } from "@/components/fila/GrupoFila";
 import { EmptyState } from "@/components/shared/EmptyState";
 import { Filtros } from "@/components/fila/Filtros";
 import { FilaRealtime } from "@/components/fila/FilaRealtime";
+import { Overview } from "@/components/dashboard/Overview";
 
 type SearchParams = Promise<{
   q?: string;
@@ -59,6 +60,26 @@ export default async function DashboardPage({
   const total = tarefas.length;
   const filtroAtivo = Boolean(sp.q || sp.categoria || sp.prioridade);
 
+  const porCategoriaMap = new Map<
+    string,
+    { nome: string; count: number; cor: string | null; icone: string | null }
+  >();
+  for (const t of tarefas) {
+    const nome = t.categoria?.nome ?? "Outros";
+    const atual = porCategoriaMap.get(nome);
+    if (atual) {
+      atual.count += 1;
+    } else {
+      porCategoriaMap.set(nome, {
+        nome,
+        count: 1,
+        cor: t.categoria?.cor ?? null,
+        icone: t.categoria?.icone ?? null,
+      });
+    }
+  }
+  const porCategoria = Array.from(porCategoriaMap.values());
+
   return (
     <div className="flex flex-col gap-4">
       <FilaRealtime />
@@ -66,6 +87,15 @@ export default async function DashboardPage({
         <p className="text-xs text-[var(--color-fg-dim)]">Olá, Wyre</p>
         <h1 className="text-xl font-bold">Aqui está o seu fluxo de hoje.</h1>
       </div>
+      <Overview
+        porStatus={{
+          hoje: agrupadas.agora.length,
+          emBreve: agrupadas.em_breve.length,
+          pausadas: agrupadas.em_pausa.length,
+          total,
+        }}
+        porCategoria={porCategoria}
+      />
       <Filtros />
       {total === 0 ? (
         <EmptyState
