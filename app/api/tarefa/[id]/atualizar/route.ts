@@ -5,6 +5,7 @@ import { processarAtualizacao } from "@/lib/ai/claude";
 import { transcreverAudio } from "@/lib/ai/whisper";
 import { createSupabaseService } from "@/lib/supabase/server";
 import { env } from "@/lib/env";
+import { requireSessionUser } from "@/lib/auth/session";
 import type { Status, Tarefa } from "@/lib/supabase/types";
 
 export const runtime = "nodejs";
@@ -17,6 +18,7 @@ export async function POST(
   { params }: { params: Promise<{ id: string }> },
 ) {
   const { id } = await params;
+  const user = await requireSessionUser();
   const svc = createSupabaseService();
 
   let conteudo = "";
@@ -35,7 +37,8 @@ export async function POST(
     fonte = "audio";
 
     try {
-      const path = `${env.defaultUserId()}/atualizacoes/${id}/${Date.now()}.webm`;
+      const ownerId = user.role === "colaborador" ? user.patrao_id : user.id;
+      const path = `${ownerId}/atualizacoes/${id}/${Date.now()}.webm`;
       const { error: upErr } = await svc.storage
         .from(env.storageBucket())
         .upload(path, file, {

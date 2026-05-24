@@ -1,14 +1,14 @@
 import { createSupabaseServer, createSupabaseService } from "@/lib/supabase/server";
-import { env } from "@/lib/env";
 import type {
   AtualizacaoTarefa,
   Categoria,
   Tarefa,
 } from "@/lib/supabase/types";
 import { GRUPOS, type Grupo } from "./grupos";
+import { requireSessionUser } from "@/lib/auth/session";
 
 const TAREFA_SELECT =
-  "*, categoria:categorias(id, nome, icone, cor)";
+  "*, categoria:categorias(id, nome, icone, cor), solicitante:usuarios!tarefas_solicitante_id_fkey(id, nome, username)";
 
 export async function getCategorias(): Promise<Categoria[]> {
   const sb = await createSupabaseServer();
@@ -19,13 +19,13 @@ export async function getCategorias(): Promise<Categoria[]> {
 export async function getTarefasAgrupadas(): Promise<
   Record<Grupo, Tarefa[]>
 > {
+  const user = await requireSessionUser(["patrao", "super_admin"]);
   const sb = await createSupabaseServer();
-  const userId = env.defaultUserId();
   const { data } = await sb
     .from("tarefas")
     .select(TAREFA_SELECT)
-    .eq("usuario_id", userId)
-    .neq("status", "concluida")
+    .eq("usuario_id", user.id)
+    .not("status", "in", "(concluida,recusada)")
     .order("created_at", { ascending: false });
 
   const out: Record<Grupo, Tarefa[]> = {
@@ -53,17 +53,30 @@ export async function getTarefa(id: string): Promise<Tarefa | null> {
 }
 
 export async function getHistorico(opts?: { incluirAbertas?: boolean }) {
+  const user = await requireSessionUser(["patrao", "super_admin"]);
   const sb = await createSupabaseServer();
-  const userId = env.defaultUserId();
   let query = sb
     .from("tarefas")
     .select(TAREFA_SELECT)
-    .eq("usuario_id", userId)
+    .eq("usuario_id", user.id)
     .order("updated_at", { ascending: false })
     .limit(200);
 
-  if (!opts?.incluirAbertas) query = query.eq("status", "concluida");
+  if (!opts?.incluirAbertas) {
+    query = query.in("status", ["concluida", "recusada"]);
+  }
   const { data } = await query;
+  return (data ?? []) as Tarefa[];
+}
+
+export async function getMinhasSolicitacoes(): Promise<Tarefa[]> {
+  const user = await requireSessionUser("colaborador");
+  const sb = await createSupabaseServer();
+  const { data } = await sb
+    .from("tarefas")
+    .select(TAREFA_SELECT)
+    .eq("solicitante_id", user.id)
+    .order("created_at", { ascending: false });
   return (data ?? []) as Tarefa[];
 }
 
@@ -81,9 +94,11 @@ export async function getAtualizacoes(
   return (data ?? []) as AtualizacaoTarefa[];
 }
 
-export async function getPadroesDoUsuario(limit = 12): Promise<string[]> {
+export async function getPadroesDoUsuario(
+  userId: string,
+  limit = 12,
+): Promise<string[]> {
   const svc = createSupabaseService();
-  const userId = env.defaultUserId();
   const { data } = await svc
     .from("padroes_usuario")
     .select("padrao,frequencia")

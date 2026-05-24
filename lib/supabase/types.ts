@@ -4,8 +4,33 @@ export type Status =
   | "em_breve"
   | "pode_esperar"
   | "em_pausa"
-  | "concluida";
+  | "concluida"
+  | "recusada";
 export type Fonte = "texto" | "audio";
+export type Role = "super_admin" | "patrao" | "colaborador";
+
+export type Usuario = {
+  id: string;
+  nome: string;
+  email: string | null;
+  role: Role;
+  patrao_id: string | null;
+  username: string | null;
+  senha_hash: string | null;
+  codigo_acesso: string | null;
+  created_at: string;
+};
+
+export type Convite = {
+  id: string;
+  token: string;
+  patrao_id: string;
+  nome_sugerido: string | null;
+  criado_em: string;
+  expira_em: string | null;
+  usado_em: string | null;
+  usuario_criado_id: string | null;
+};
 
 export type Categoria = {
   id: string;
@@ -33,6 +58,9 @@ export type Tarefa = {
   fonte: Fonte;
   audio_url: string | null;
   resumo_atual: string | null;
+  solicitante_id: string | null;
+  solicitante?: { id: string; nome: string; username: string | null } | null;
+  recusada_motivo: string | null;
   created_at: string;
   updated_at: string;
 };

@@ -1,30 +1,46 @@
 "use server";
 
-import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
-
-const COOKIE_NAME = "pitflow-auth";
+import {
+  buscarUsuarioPorCodigo,
+  buscarUsuarioPorUsername,
+  verificarSenha,
+} from "@/lib/auth/usuarios";
+import { clearSessionCookie, setSessionCookie } from "@/lib/auth/session";
 
 export async function login(formData: FormData) {
-  const password = String(formData.get("password") ?? "");
+  const usuario = String(formData.get("usuario") ?? "").trim();
+  const senha = String(formData.get("senha") ?? "");
   const from = String(formData.get("from") ?? "/");
-  const expected = process.env.APP_PASSWORD;
 
-  if (!expected) {
-    redirect("/login?error=config");
+  if (!senha) redirect("/login?error=1");
+
+  let user = null;
+  if (usuario) {
+    const candidato = await buscarUsuarioPorUsername(usuario);
+    if (
+      candidato &&
+      candidato.senha_hash &&
+      verificarSenha(senha, candidato.senha_hash)
+    ) {
+      user = candidato;
+    }
+  } else {
+    user = await buscarUsuarioPorCodigo(senha);
   }
-  if (password !== expected) {
-    redirect("/login?error=1");
+
+  if (!user) redirect("/login?error=1");
+
+  await setSessionCookie(user.id, user.role);
+
+  if (user.role === "colaborador") {
+    redirect("/colaborador");
   }
+  const dest = from.startsWith("/") && !from.startsWith("/login") ? from : "/";
+  redirect(dest);
+}
 
-  const cookieStore = await cookies();
-  cookieStore.set(COOKIE_NAME, expected, {
-    httpOnly: true,
-    secure: process.env.NODE_ENV === "production",
-    sameSite: "lax",
-    maxAge: 60 * 60 * 24 * 30,
-    path: "/",
-  });
-
-  redirect(from.startsWith("/") && !from.startsWith("/login") ? from : "/");
+export async function logout() {
+  await clearSessionCookie();
+  redirect("/login");
 }

@@ -1,5 +1,4 @@
 import { createSupabaseServer } from "@/lib/supabase/server";
-import { env } from "@/lib/env";
 import { GRUPOS, type Grupo } from "@/lib/tarefas/grupos";
 import type { Tarefa } from "@/lib/supabase/types";
 import { GrupoFila } from "@/components/fila/GrupoFila";
@@ -7,6 +6,7 @@ import { EmptyState } from "@/components/shared/EmptyState";
 import { Filtros } from "@/components/fila/Filtros";
 import { FilaRealtime } from "@/components/fila/FilaRealtime";
 import { Overview } from "@/components/dashboard/Overview";
+import { requireSessionUser } from "@/lib/auth/session";
 
 type SearchParams = Promise<{
   q?: string;
@@ -20,14 +20,16 @@ export default async function DashboardPage({
   searchParams: SearchParams;
 }) {
   const sp = await searchParams;
+  const user = await requireSessionUser(["patrao", "super_admin"]);
   const sb = await createSupabaseServer();
-  const userId = env.defaultUserId();
 
   let query = sb
     .from("tarefas")
-    .select("*, categoria:categorias(id, nome, icone, cor)")
-    .eq("usuario_id", userId)
-    .neq("status", "concluida")
+    .select(
+      "*, categoria:categorias(id, nome, icone, cor), solicitante:usuarios!tarefas_solicitante_id_fkey(id, nome, username)",
+    )
+    .eq("usuario_id", user.id)
+    .not("status", "in", "(concluida,recusada)")
     .order("created_at", { ascending: false });
 
   if (sp.prioridade) query = query.eq("prioridade", sp.prioridade);
@@ -39,11 +41,11 @@ export default async function DashboardPage({
   }
 
   const { data } = await query;
-  let tarefas = (data ?? []) as Tarefa[];
+  const tarefasOriginais = (data ?? []) as Tarefa[];
 
-  if (sp.categoria) {
-    tarefas = tarefas.filter((t) => t.categoria?.nome === sp.categoria);
-  }
+  const tarefas = sp.categoria
+    ? tarefasOriginais.filter((t) => t.categoria?.nome === sp.categoria)
+    : tarefasOriginais;
 
   const agrupadas: Record<Grupo, Tarefa[]> = {
     agora: [],
@@ -64,7 +66,7 @@ export default async function DashboardPage({
     string,
     { nome: string; count: number; cor: string | null; icone: string | null }
   >();
-  for (const t of tarefas) {
+  for (const t of tarefasOriginais) {
     const nome = t.categoria?.nome ?? "Outros";
     const atual = porCategoriaMap.get(nome);
     if (atual) {
@@ -84,7 +86,7 @@ export default async function DashboardPage({
     <div className="flex flex-col gap-4">
       <FilaRealtime />
       <div>
-        <p className="text-xs text-[var(--color-fg-dim)]">Olá, Wyre</p>
+        <p className="text-xs text-[var(--color-fg-dim)]">Olá, {user.nome}</p>
         <h1 className="text-xl font-bold">Aqui está o seu fluxo de hoje.</h1>
       </div>
       <Overview
@@ -95,24 +97,27 @@ export default async function DashboardPage({
           total,
         }}
         porCategoria={porCategoria}
+        categoriaAtiva={sp.categoria ?? null}
       />
       <Filtros />
-      {total === 0 ? (
-        <EmptyState
-          title={filtroAtivo ? "Nada encontrado" : "Sem tarefas pendentes"}
-          description={
-            filtroAtivo
-              ? "Ajuste os filtros ou limpe a busca para ver tudo."
-              : "Toque no botão verde para registrar sua primeira tarefa por texto ou áudio."
-          }
-        />
-      ) : (
-        <div className="flex flex-col gap-5">
-          {GRUPOS.map((g) => (
-            <GrupoFila key={g} grupo={g} tarefas={agrupadas[g]} />
-          ))}
-        </div>
-      )}
+      <div id="tarefas" className="scroll-mt-24">
+        {total === 0 ? (
+          <EmptyState
+            title={filtroAtivo ? "Nada encontrado" : "Sem tarefas pendentes"}
+            description={
+              filtroAtivo
+                ? "Ajuste os filtros ou limpe a busca para ver tudo."
+                : "Toque no botão verde para registrar sua primeira tarefa por texto ou áudio."
+            }
+          />
+        ) : (
+          <div className="flex flex-col gap-5">
+            {GRUPOS.map((g) => (
+              <GrupoFila key={g} grupo={g} tarefas={agrupadas[g]} />
+            ))}
+          </div>
+        )}
+      </div>
     </div>
   );
 }

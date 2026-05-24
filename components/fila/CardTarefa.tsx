@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { Clock, Pause, Repeat } from "lucide-react";
+import { Clock, Pause, Repeat, User } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { BadgePrioridade } from "./BadgePrioridade";
 import { formatRelative } from "@/lib/utils";
@@ -24,6 +24,12 @@ export function CardTarefa({ tarefa }: { tarefa: Tarefa }) {
             </h3>
             <BadgePrioridade prioridade={tarefa.prioridade} />
           </div>
+          {tarefa.solicitante && (
+            <span className="inline-flex items-center gap-1 self-start rounded-full bg-[var(--color-primary)]/15 text-[var(--color-primary)] px-2 py-0.5 text-[11px] font-medium">
+              <User size={11} />
+              {tarefa.solicitante.nome}
+            </span>
+          )}
           <div className="flex items-center gap-3 text-xs text-[var(--color-fg-muted)]">
             {tarefa.categoria?.nome && (
               <span className="rounded-full bg-[var(--color-bg-elev)] px-2 py-0.5">

@@ -9,7 +9,7 @@ import { BotaoGravar } from "./BotaoGravar";
 
 type Aba = "texto" | "audio";
 
-export function FormCaptura() {
+export function FormCaptura({ redirectTo = "/" }: { redirectTo?: string }) {
   const router = useRouter();
   const [aba, setAba] = useState<Aba>("texto");
   const [texto, setTexto] = useState("");
@@ -32,7 +32,7 @@ export function FormCaptura() {
         }),
       });
       if (!res.ok) throw new Error(await res.text());
-      router.push("/");
+      router.push(redirectTo);
       router.refresh();
     } catch (e) {
       console.error(e);

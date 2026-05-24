@@ -3,7 +3,6 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { createSupabaseService } from "@/lib/supabase/server";
-import { env } from "@/lib/env";
 import type { Prioridade, Status, Tarefa } from "@/lib/supabase/types";
 
 function svc() {
@@ -46,6 +45,24 @@ export async function concluirTarefa(id: string) {
   await registrarHistorico(id, "concluida");
   revalidatePath("/");
   revalidatePath("/historico");
+}
+
+export async function recusarTarefa(formData: FormData) {
+  const id = String(formData.get("id"));
+  const motivo = String(formData.get("motivo") ?? "").trim() || null;
+  await svc()
+    .from("tarefas")
+    .update({
+      status: "recusada",
+      recusada_motivo: motivo,
+      updated_at: new Date().toISOString(),
+    })
+    .eq("id", id);
+  await registrarHistorico(id, motivo ? `recusada: ${motivo}` : "recusada");
+  revalidatePath("/");
+  revalidatePath(`/tarefa/${id}`);
+  revalidatePath("/historico");
+  redirect("/");
 }
 
 export async function reabrirTarefa(id: string) {
@@ -93,9 +110,11 @@ export async function inserirTarefaClassificada(payload: {
   status: Status;
   fonte: "texto" | "audio";
   audioUrl?: string | null;
+  usuarioId: string;
+  solicitanteId?: string | null;
 }): Promise<Tarefa> {
   const s = svc();
-  const userId = env.defaultUserId();
+  const userId = payload.usuarioId;
   const { data: cat } = await s
     .from("categorias")
     .select("id")
@@ -114,6 +133,7 @@ export async function inserirTarefaClassificada(payload: {
     .from("tarefas")
     .insert({
       usuario_id: userId,
+      solicitante_id: payload.solicitanteId ?? null,
       descricao: payload.descricaoOriginal,
       descricao_resumida: payload.classificacao.descricao_resumida,
       categoria_id: cat?.id ?? null,
@@ -135,7 +155,6 @@ export async function inserirTarefaClassificada(payload: {
 
   await s.from("historico").insert({ tarefa_id: nova.id, acao: "criada" });
 
-  // Padrões do usuário: incrementa por palavra-chave (upsert manual).
   for (const palavra of payload.classificacao.palavras_chave) {
     const { data: existe } = await s
       .from("padroes_usuario")

@@ -119,13 +119,20 @@ function StatusCard({ data }: { data: StatusCardData }) {
   );
 }
 
-function CategoriaRow({ item }: { item: CategoriaItem }) {
+function CategoriaRow({
+  item,
+  ativa,
+}: {
+  item: CategoriaItem;
+  ativa: boolean;
+}) {
   const Icon = (item.icone && ICON_MAP[item.icone]) || CircleDot;
   const cor = corDaCategoria(item.nome, item.cor);
   return (
     <Link
-      href={`/?categoria=${encodeURIComponent(item.nome)}`}
-      className="group rounded-xl bg-[var(--color-bg-card)] border border-[var(--color-border)] p-3 flex items-center gap-3 transition-colors hover:bg-[var(--color-bg-elev)] active:scale-[0.99]"
+      href={ativa ? "/" : `/?categoria=${encodeURIComponent(item.nome)}#tarefas`}
+      className="group rounded-xl bg-[var(--color-bg-card)] border p-3 flex items-center gap-3 transition-colors hover:bg-[var(--color-bg-elev)] active:scale-[0.99]"
+      style={{ borderColor: ativa ? cor : "var(--color-border)" }}
     >
       <div
         className="h-9 w-9 rounded-lg flex items-center justify-center shrink-0"
@@ -135,6 +142,11 @@ function CategoriaRow({ item }: { item: CategoriaItem }) {
       </div>
       <div className="flex-1 min-w-0">
         <p className="text-sm font-medium truncate">{item.nome}</p>
+        {ativa && (
+          <p className="text-[10px] text-[var(--color-fg-dim)]">
+            Toque para limpar filtro
+          </p>
+        )}
       </div>
       <div
         className="text-2xl font-bold leading-none tabular-nums"
@@ -153,9 +165,11 @@ function CategoriaRow({ item }: { item: CategoriaItem }) {
 export function Overview({
   porStatus,
   porCategoria,
+  categoriaAtiva,
 }: {
   porStatus: { hoje: number; emBreve: number; pausadas: number; total: number };
   porCategoria: CategoriaItem[];
+  categoriaAtiva?: string | null;
 }) {
   const [slide, setSlide] = useState(0);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -241,21 +255,25 @@ export function Overview({
       </div>
       <div
         ref={containerRef}
-        className="flex overflow-x-auto snap-x snap-mandatory gap-3 -mx-4 px-4 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+        className="flex overflow-x-auto snap-x snap-mandatory [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
       >
-        <div className="snap-start shrink-0 w-full grid grid-cols-2 gap-2">
+        <div className="snap-start shrink-0 basis-full grid grid-cols-2 gap-2">
           {statusCards.map((c) => (
             <StatusCard key={c.href} data={c} />
           ))}
         </div>
-        <div className="snap-start shrink-0 w-full flex flex-col gap-2">
+        <div className="snap-start shrink-0 basis-full flex flex-col gap-2 pl-3">
           {categoriasOrdenadas.length === 0 ? (
             <div className="rounded-xl bg-[var(--color-bg-card)] border border-[var(--color-border)] p-6 text-center text-sm text-[var(--color-fg-dim)]">
               Sem pendências em nenhuma categoria.
             </div>
           ) : (
             categoriasOrdenadas.map((c) => (
-              <CategoriaRow key={c.nome} item={c} />
+              <CategoriaRow
+                key={c.nome}
+                item={c}
+                ativa={c.nome === categoriaAtiva}
+              />
             ))
           )}
         </div>

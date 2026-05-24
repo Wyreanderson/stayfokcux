@@ -2,7 +2,7 @@
 
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
-import { Check, Pause, Play, Trash2 } from "lucide-react";
+import { Check, Pause, Play, Trash2, XCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input, Select, Textarea } from "@/components/ui/input";
 import {
@@ -10,6 +10,7 @@ import {
   concluirTarefa,
   excluirTarefa,
   pausarOuRetomar,
+  recusarTarefa,
 } from "@/lib/tarefas/mutations";
 import { GRUPOS, GRUPO_META, PRIORIDADE_LABEL } from "@/lib/tarefas/grupos";
 import type { Categoria, Tarefa } from "@/lib/supabase/types";
@@ -26,6 +27,7 @@ export function DetalhesForm({
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
   const [confirmandoExclusao, setConfirmandoExclusao] = useState(false);
+  const [confirmandoRecusa, setConfirmandoRecusa] = useState(false);
 
   const prazoLocal = tarefa.prazo
     ? new Date(tarefa.prazo).toISOString().slice(0, 16)
@@ -36,6 +38,15 @@ export function DetalhesForm({
   return (
     <form action={atualizarTarefa} className="flex flex-col gap-4">
       <input type="hidden" name="id" value={tarefa.id} />
+
+      {tarefa.recusada_motivo && (
+        <div className="rounded-xl border border-red-500/40 bg-red-500/10 p-3">
+          <p className="text-xs uppercase tracking-wide text-red-400">
+            Tarefa recusada
+          </p>
+          <p className="text-sm mt-1">{tarefa.recusada_motivo}</p>
+        </div>
+      )}
 
       <div className="rounded-xl bg-[var(--color-bg-card)] border border-[var(--color-border)] p-3">
         <p className="text-xs text-[var(--color-fg-dim)] uppercase">
@@ -159,6 +170,47 @@ export function DetalhesForm({
             {emPausa ? "Retomar" : "Pausar"}
           </Button>
         </div>
+        {tarefa.solicitante && tarefa.status !== "recusada" && (
+          confirmandoRecusa ? (
+            <div className="flex flex-col gap-2 rounded-xl border border-red-500/40 bg-red-500/10 p-3">
+              <p className="text-xs uppercase tracking-wide text-red-400">
+                Motivo da recusa (opcional)
+              </p>
+              <form
+                action={recusarTarefa}
+                className="flex flex-col gap-2"
+              >
+                <input type="hidden" name="id" value={tarefa.id} />
+                <Textarea
+                  name="motivo"
+                  placeholder="Ex: já temos esse item em estoque"
+                  className="min-h-[80px]"
+                />
+                <div className="flex gap-2">
+                  <Button type="submit" variant="danger" className="flex-1">
+                    Recusar
+                  </Button>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    onClick={() => setConfirmandoRecusa(false)}
+                  >
+                    Cancelar
+                  </Button>
+                </div>
+              </form>
+            </div>
+          ) : (
+            <Button
+              type="button"
+              variant="ghost"
+              onClick={() => setConfirmandoRecusa(true)}
+              className="text-red-400"
+            >
+              <XCircle size={18} /> Recusar solicitação
+            </Button>
+          )
+        )}
         {confirmandoExclusao ? (
           <div className="flex gap-2">
             <Button

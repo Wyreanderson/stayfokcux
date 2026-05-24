@@ -25,24 +25,29 @@ export default async function LoginPage({
         <form action={login} className="flex flex-col gap-3">
           <input type="hidden" name="from" value={from ?? "/"} />
           <Input
+            type="text"
+            name="usuario"
+            placeholder="Usuário (colaborador)"
+            autoComplete="username"
+          />
+          <Input
             type="password"
-            name="password"
-            placeholder="Senha"
+            name="senha"
+            placeholder="Senha ou código"
             autoComplete="current-password"
-            autoFocus
             required
           />
           {error === "1" && (
-            <p className="text-sm text-red-400 text-center">Senha incorreta.</p>
-          )}
-          {error === "config" && (
             <p className="text-sm text-red-400 text-center">
-              APP_PASSWORD não está configurado no servidor.
+              Credenciais inválidas.
             </p>
           )}
           <Button type="submit" size="lg">
             Entrar
           </Button>
+          <p className="text-xs text-[var(--color-fg-dim)] text-center">
+            Gestor entra só com o código. Colaborador preenche usuário + senha.
+          </p>
         </form>
       </div>
     </main>
